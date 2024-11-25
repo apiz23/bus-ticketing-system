@@ -1,0 +1,6 @@
+@echo off
+rem Compile the Java files using PowerShell to list files
+powershell -Command "javac -d out -cp '.;postgresql-42.7.4.jar' (Get-ChildItem -Recurse -Path src -Filter '*.java').FullName"
+
+rem Run the compiled Java program
+java -cp ".;out;postgresql-42.7.4.jar" Main
