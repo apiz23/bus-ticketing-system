@@ -1,8 +1,6 @@
-import service.SupabaseCon;
+import booking.Booking;
 import utils.ClearTerminal;
-import view.BookingView;
 
-import java.sql.Connection;
 import java.util.Scanner;
 
 public class Main {
@@ -10,18 +8,12 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
         ClearTerminal cls = new ClearTerminal();
-        Connection connection = null;
-
-        try {
-            connection = SupabaseCon.connect();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
 
         int status = 0;
         int choice;
 
         do {
+            cls.Clear();
             System.out.println("===== Bus Booking System Menu =====");
             System.out.println("1. Booking");
             System.out.println("2. Admin");
@@ -33,8 +25,8 @@ public class Main {
             switch (choice) {
                 case 1:
                     cls.Clear();
-                    BookingView bookV = new BookingView();
-                    bookV.menu();
+                    Booking book = new Booking();
+                    book.menu();
                     break;
                 case 2:
                     break;
