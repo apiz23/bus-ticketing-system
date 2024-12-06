@@ -61,25 +61,39 @@ public class User {
 
     public ArrayList<String> fillCredentials() {
         Scanner scanner = new Scanner(System.in);
-
         System.out.println("Please fill in your details:");
-
         ArrayList<String> credentials = new ArrayList<>();
+        String name, age, email, phoneNumber, address;
 
-        System.out.print("Name: ");
-        credentials.add(scanner.nextLine());
+        do {
+            System.out.print("Name (only letters, at least 2 characters): ");
+            name = scanner.nextLine().trim();
+        } while (!name.matches("[a-zA-Z\\s]{2,}"));
+        credentials.add(name);
 
-        System.out.print("Age: ");
-        credentials.add(scanner.nextLine());
+        do {
+            System.out.print("Age (integer between 1 and 100): ");
+            age = scanner.nextLine().trim();
+        } while (!age.matches("\\d{1,3}") || Integer.parseInt(age) < 1 || Integer.parseInt(age) > 100);
+        credentials.add(age);
 
-        System.out.print("Email: ");
-        credentials.add(scanner.nextLine());
+        do {
+            System.out.print("Email (valid format): ");
+            email = scanner.nextLine().trim();
+        } while (!email.matches("^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,6}$"));
+        credentials.add(email);
 
-        System.out.print("Phone Number: ");
-        credentials.add(scanner.nextLine());
+        do {
+            System.out.print("Phone Number (10-15 digits, numeric): ");
+            phoneNumber = scanner.nextLine().trim();
+        } while (!phoneNumber.matches("\\d{10,15}"));
+        credentials.add(phoneNumber);
 
-        System.out.print("Address: ");
-        credentials.add(scanner.nextLine());
+        do {
+            System.out.print("Address (non-empty): ");
+            address = scanner.nextLine().trim();
+        } while (address.isEmpty());
+        credentials.add(address);
 
         return credentials;
     }
