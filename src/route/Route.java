@@ -1,6 +1,7 @@
 package route;
 
 import booking.Booking;
+import bus.Bus;
 import utils.SupabaseCon;
 
 import java.sql.Connection;
@@ -29,10 +30,10 @@ public class Route {
         this.toStation = toStation;
         this.date = date;
         this.price = price;
-        this.createdAt = createdAt;
         this.busModelId = busModelId;
         this.seats = seats;
         this.time = time;
+        this.createdAt = createdAt;
     }
 
     public Route() {
@@ -93,9 +94,8 @@ public class Route {
                 return;
             }
 
-            System.out.println("+----+----------------------+----------------------+-------------------+--------+---------------------+---------------------+------------------+");
-            System.out.println("| No | From Station         | To Station           | Date              | Time   | Price  | Bus Brand           | Bus Model Type      |");
-            System.out.println("+----+----------------------+----------------------+-------------------+--------+---------------------+---------------------+------------------+");
+            System.out.println("No\tFrom Station\t\tTo Station\t\t\tDate\t\tTime\t\tPrice\t\tBus Brand\t\tBus Model Type");
+            System.out.println("+----+----------------------+----------------------+-------------------+--------+---------------------+---------------------+------------------+--------------------+");
 
             List<Integer> busModelIds = new ArrayList<>();
             List<Integer> routeIds = new ArrayList<>();
@@ -115,13 +115,13 @@ public class Route {
                 busModelIds.add(busModelId);
                 routeIds.add(routeId);
 
-                System.out.format("| %-2d | %-20s | %-20s | %-17s | %-6s | RM%-6.2f | %-19s | %-19s |\n",
-                        rowNumber, fromStation, toStation, date, time, price, brandName, busModelType);
+                System.out.println(rowNumber + "\t" + fromStation + "\t" + toStation + "\t" + date + "\t" + time +
+                        "\tRM" + price + "\t\t" + brandName + "\t" + busModelType);
 
                 rowNumber++;
             } while (resultSet.next());
 
-            System.out.println("+----+----------------------+----------------------+-------------------+--------+---------------------+---------------------+------------------+");
+            System.out.println("+----+----------------------+----------------------+-------------------+--------+---------------------+---------------------+------------------+--------------------+");
 
             Scanner scanner = new Scanner(System.in);
             System.out.print("Choose a route by entering the number (1-" + busModelIds.size() + "): ");
@@ -133,15 +133,11 @@ public class Route {
                 int selectedBusModelId = busModelIds.get(choice - 1);
                 int selectedRouteId = routeIds.get(choice - 1);
 
-                Booking book = new Booking();
-                book.chooseSeats(selectedBusModelId, selectedRouteId);
+                new Booking().chooseSeats(selectedBusModelId, selectedRouteId);
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("An error occurred while fetching the routes.");
-        } finally {
-            SupabaseCon.closeConnection(connection);
         }
     }
 }

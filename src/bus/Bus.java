@@ -1,6 +1,14 @@
 package bus;
 
+import utils.SupabaseCon;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class Bus {
     private String busNumber;
@@ -43,8 +51,9 @@ public class Bus {
             if (List.of(seats).contains(String.valueOf(i))) {
                 System.out.print("[X] ");
             } else {
-                System.out.print("[ ] ");
+                System.out.print("[" + i + "] ");
             }
+
             if (i % 4 == 0) {
                 System.out.println();
             } else if (i % 2 == 0) {
