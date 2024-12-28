@@ -8,6 +8,7 @@ import java.util.Scanner;
 
 import booking.Booking;
 import route.Route;
+import model.Bus;
 import utils.SupabaseCon;
 import utils.TerminalCommand;
 
@@ -57,6 +58,22 @@ public class Admin extends User {
 
                     case 4:
                         addAdmin();
+                        break;
+
+                    case 5:
+                        new Route().addRoute();
+                        break;
+
+                    case 6:
+                        new Bus().addModel();
+                        break;
+
+                    case 7:
+                        new Route().deleteRoute();
+                        break;
+
+                    case 8:
+                        new Bus().deleteModel();
                         break;
 
                     case 0:
@@ -182,4 +199,5 @@ public class Admin extends User {
             System.out.println("An error occurred while adding the new admin.");
         }
     }
+
 }
