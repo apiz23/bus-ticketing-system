@@ -1,6 +1,5 @@
 package booking;
 
-import bus.Bus;
 import route.Route;
 import user.Client;
 import utils.HttpsRequest;
@@ -15,12 +14,15 @@ import java.util.*;
 
 public class Booking {
 
-    public Booking() {
-    }
+    public Booking() {}
 
     public void Menu(Scanner scanner) {
         scanner.nextLine();
-        System.out.println("Welcome To BBS\n\nEnter From Where:");
+
+        new TerminalCommand().Clear();
+        new TerminalCommand().customText("Welcome To BBS");
+
+        System.out.println("\n\nEnter From Where:");
         String startStation = scanner.nextLine().toLowerCase();
 
         System.out.println("Enter To Where:");
@@ -33,88 +35,74 @@ public class Booking {
         String endDate = scanner.nextLine();
 
         Route busRoute = new Route();
+
         if (!endDate.isEmpty()) {
-            System.out.println("End Date: " + endDate);
+            String[] result1 =  busRoute.searchRoutes(startStation, endStation, startDate);
+            System.out.println("\nChoose your return trip bus:");
+
+            if (result1 != null) {
+                String[] result2 =  busRoute.searchRoutes(endStation, "", endDate);
+
+                if (result2 != null) {
+
+                    double totalPrice = Double.parseDouble(result1[2]) + Double.parseDouble(result2[2]);
+                    ArrayList<String> clientDetails = new Client().fillCredentials();
+
+                    do {
+                        System.out.print("Enter payment amount (Route Price: RM " + totalPrice + "): RM ");
+                        double paymentAmount = scanner.nextDouble();
+
+                        if (paymentAmount == totalPrice) {
+                            System.out.println("Payment successful. Booking your seat...");
+                            createBooking(Integer.parseInt(result1[1]), Integer.parseInt(result1[0]), Integer.parseInt(result1[3]), result1[4], clientDetails);
+                            createBooking(Integer.parseInt(result2[1]), Integer.parseInt(result2[0]), Integer.parseInt(result2[3]), result2[4], clientDetails);
+                            System.out.println("Seat has been booked successfully.");
+                            System.out.println("Check your email for the receipt. Thank you!");
+                            break;
+                        } else {
+                            System.out.println("Payment failed. Incorrect payment amount.");
+                        }
+                    } while (true);
+                } else {
+                    System.out.println("No return trip route found or an error occurred.");
+                }
+            } else {
+                System.out.println("No outbound route found or an error occurred.");
+            }
         } else {
-            busRoute.oneWayRoutes(startStation, endStation, startDate);
+
+            String[] result =  busRoute.searchRoutes(startStation, endStation, startDate);
+
+            if (result != null) {
+                ArrayList<String> clientDetails = new Client().fillCredentials();
+
+                do {
+                    System.out.print("Enter payment amount (Route Price: RM " + result[2] + "): RM ");
+                    double paymentAmount = scanner.nextDouble();
+
+                    if (paymentAmount == Double.parseDouble(result[2])) {
+                        System.out.println("Payment successful. Booking your seat...");
+                        createBooking(Integer.parseInt(result[1]), Integer.parseInt(result[0]), Integer.parseInt(result[3]),result[4], clientDetails);
+                        System.out.println("Seat has been booked successfully.");
+                        System.out.println("Check your email for the receipt. Thank you!");
+                        break;
+                    } else {
+                        System.out.println("Payment failed. Incorrect payment amount.");
+                    }
+                } while (true);
+            } else {
+                System.out.println("No route found or an error occurred.");
+            }
         }
     }
 
-    public void chooseSeats(int busId, int routeId) {
-        Scanner scanner = new Scanner(System.in);
+    public void createBooking(int busId, int routeId, int selectedSeat, String seatsString, ArrayList<String> clientDetails) {
 
         try (Connection connection = SupabaseCon.connect()) {
             if (connection == null) {
                 System.out.println("Failed to connect to the database.");
                 return;
             }
-
-            String fetchQuery = "SELECT bm.capacity, bm.type AS bus_type, br.seats " +
-                    "FROM bus_route br " +
-                    "JOIN bus_model bm ON br.bus_model_id = bm.bus_id " +
-                    "WHERE br.route_id = ? AND bm.bus_id = ?";
-
-            PreparedStatement fetchStatement = connection.prepareStatement(fetchQuery);
-            fetchStatement.setInt(1, routeId);
-            fetchStatement.setInt(2, busId);
-            ResultSet resultSet = fetchStatement.executeQuery();
-
-            if (resultSet.next()) {
-                int capacity = resultSet.getInt("capacity");
-                String busType = resultSet.getString("bus_type");
-
-                String seatsString = resultSet.getString("seats");
-                String[] seats = seatsString != null ? seatsString.split(",") : new String[0];
-
-                System.out.println("Seats Layout:");
-
-                Bus busLayout = new Bus();
-                switch (busType.toLowerCase()) {
-                    case "economy":
-                        busLayout.generateEconomyLayout(capacity, seats);
-                        break;
-                    case "executive":
-                        busLayout.generateExecutiveLayout(capacity, seats);
-                        break;
-                    case "double decker":
-                        busLayout.generateDoubleDeckerLayout(capacity, seats);
-                        break;
-                    default:
-                        System.out.println("Unknown bus type: " + busType);
-                        return;
-                }
-
-                int selectedSeat;
-
-                do {
-                    System.out.println("\nEnter the seat number you want to book (1-" + capacity + "): ");
-                    selectedSeat = scanner.nextInt();
-
-                    if (selectedSeat < 1 || selectedSeat > capacity) {
-                        System.out.println("Invalid seat number. Please try again.");
-                        continue;
-                    }
-
-                    if (Arrays.asList(seats).contains(String.valueOf(selectedSeat))) {
-                        System.out.println("Seat " + selectedSeat + " is already booked.");
-                        continue;
-                    }
-                    break;
-                } while (true);
-                createBooking(connection, busId, routeId, selectedSeat, seatsString);
-            } else {
-                System.out.println("Bus with ID " + busId + " and route " + routeId + " not found.");
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println("An error occurred while processing the seat selection.");
-        }
-    }
-
-    private void createBooking(Connection connection, int busId, int routeId, int selectedSeat, String seatsString) {
-        try {
-            ArrayList<String> clientDetails = new Client().fillCredentials();
 
             clientDetails.add("Route ID: " + routeId);
             clientDetails.add("Bus ID: " + busId);
@@ -149,12 +137,10 @@ public class Booking {
 
                 int rowsAffected = updateStatement.executeUpdate();
                 if (rowsAffected > 0) {
-                    System.out.println("Seat information updated successfully.");
+                    HttpsRequest.sendEmailReceipt(bookId);
                 } else {
                     System.out.println("Failed to update seat information.");
                 }
-
-                HttpsRequest.sendReceiptRequest(bookId);
             } else {
                 System.out.println("Failed to retrieve the book_id.");
             }
@@ -177,8 +163,8 @@ public class Booking {
             PreparedStatement statement = connection.prepareStatement(query);
             ResultSet resultSet = statement.executeQuery();
 
-            System.out.println("\nBooking Details:");
-            System.out.printf("%-10s %-10s %-10s %-10s %-20s %-5s %-20s %-15s %-20s\n",
+            new TerminalCommand().customText("Booking Details");
+            System.out.printf("%-10s %-10s %-10s %-10s %-20s %-5s %-30s %-15s %-20s\n",
                     "Book ID", "Route ID", "Bus ID", "Seat No", "Name", "Age", "Email", "Phone", "Address");
             System.out.println("----------------------------------------------------------------------------------------------------------------------");
 
@@ -193,7 +179,7 @@ public class Booking {
                 String phone = resultSet.getString("no_phone");
                 String address = resultSet.getString("address");
 
-                System.out.printf("%-10d %-10d %-10d %-10d %-20s %-5d %-20s %-15s %-20s\n",
+                System.out.printf("%-10d %-10d %-10d %-10d %-20s %-5d %-30s %-15s %-20s\n",
                         bookId, routeId, busId, seatNo, name, age, email, phone, address);
             }
 

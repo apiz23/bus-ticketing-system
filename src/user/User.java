@@ -59,9 +59,14 @@ public class User {
         this.address = address;
     }
 
+    public void viewList(){
+        System.out.println("View all the list student");
+    }
+
     public ArrayList<String> fillCredentials() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Please fill in your details:");
+
         ArrayList<String> credentials = new ArrayList<>();
         String name, age, email, phoneNumber, address;
 
@@ -69,30 +74,35 @@ public class User {
             System.out.print("Name (only letters, at least 2 characters): ");
             name = scanner.nextLine().trim();
         } while (!name.matches("[a-zA-Z\\s]{2,}"));
+        setName(name);
         credentials.add(name);
 
         do {
             System.out.print("Age (integer between 1 and 100): ");
             age = scanner.nextLine().trim();
         } while (!age.matches("\\d{1,3}") || Integer.parseInt(age) < 1 || Integer.parseInt(age) > 100);
+        setAge(Integer.parseInt(age));
         credentials.add(age);
 
         do {
             System.out.print("Email (valid format): ");
             email = scanner.nextLine().trim();
         } while (!email.matches("^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,6}$"));
+        setEmail(email);
         credentials.add(email);
 
         do {
             System.out.print("Phone Number (10-15 digits, numeric): ");
             phoneNumber = scanner.nextLine().trim();
         } while (!phoneNumber.matches("\\d{10,15}"));
+        setNoPhone(phoneNumber);
         credentials.add(phoneNumber);
 
         do {
             System.out.print("Address (non-empty): ");
             address = scanner.nextLine().trim();
         } while (address.isEmpty());
+        setAddress(address);
         credentials.add(address);
 
         return credentials;
