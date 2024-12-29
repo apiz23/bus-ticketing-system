@@ -18,11 +18,7 @@ public class Client extends User {
         super(name, age, email, phoneNumber, address);
     }
 
-    public void viewBookingDetails() {
-        System.out.println("Viewing booking details...");
-    }
-
-    public void viewClientList() {
+    public void viewList() {
         List<Client> clients = new ArrayList<>();
 
         try (Connection connection = SupabaseCon.connect()) {
@@ -53,13 +49,13 @@ public class Client extends User {
         if (clients.isEmpty()) {
             System.out.println("No clients found.");
         } else {
-            System.out.println("\nClient List:");
-            System.out.printf("%-20s %-5s %-20s %-15s %-20s\n",
+            new TerminalCommand().customText("Client List");
+            System.out.printf("%-20s %-5s %-30s %-15s %-20s\n",
                     "Name", "Age", "Email", "Phone", "Address");
             System.out.println("-----------------------------------------------------------------------------------");
 
             for (Client client : clients) {
-                System.out.printf("%-20s %-5d %-20s %-15s %-20s\n",
+                System.out.printf("%-20s %-5d %-30s %-15s %-20s\n",
                         client.getName(), client.getAge(), client.getEmail(), client.getNoPhone(), client.getAddress());
             }
         }
