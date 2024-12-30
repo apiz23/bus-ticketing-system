@@ -123,7 +123,7 @@ public class Bus {
                 return null;
             }
 
-            String fetchQuery = "SELECT bm.busCapacity, bm.type AS bus_type, br.seats, br.price " +
+            String fetchQuery = "SELECT bm.capacity, bm.type AS bus_type, br.seats, br.price " +
                     "FROM bus_route br " +
                     "JOIN bus_model bm ON br.bus_model_id = bm.bus_id " +
                     "WHERE br.route_id = ? AND bm.bus_id = ?";
@@ -134,7 +134,7 @@ public class Bus {
             ResultSet resultSet = fetchStatement.executeQuery();
 
             if (resultSet.next()) {
-                int capacity = resultSet.getInt("busCapacity");
+                int capacity = resultSet.getInt("capacity");
                 String busType = resultSet.getString("bus_type");
 
                 String seatsString = resultSet.getString("seats");
