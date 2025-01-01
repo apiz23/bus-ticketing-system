@@ -9,15 +9,19 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         boolean status = true;
         TerminalCommand cmd = new TerminalCommand();
+
         do {
             try {
                 cmd.Clear();
-                System.out.println("==================================================");
+
                 cmd.customText("Bus Booking");
                 cmd.customText("System Menu");
-                System.out.println("==================================================");
+                System.out.println("==============");
+                System.out.println("Main Menu");
+                System.out.println("==============");
                 System.out.println("1. Booking");
-                System.out.println("2. Admin");
+                System.out.println("2. Management Login");
+                System.out.println("3. Check your history");
                 System.out.println("0. Exit");
                 System.out.print("Enter your choice: ");
 
@@ -29,14 +33,26 @@ public class Main {
                 }
 
                 int choice = scanner.nextInt();
+                scanner.nextLine();
 
                 switch (choice) {
                     case 1:
-                        new Booking().Menu(scanner);
+                        new Booking().menu(scanner);
                         break;
 
                     case 2:
-                        new Admin().Menu();
+                        new Admin().mainMenu();
+                        break;
+
+                    case 3:
+                        cmd.Clear();
+                        System.out.print("Enter Your Email: ");
+                        String userEmail = scanner.nextLine().trim();
+                        if (!userEmail.isEmpty()) {
+                            new Booking().viewBookingHistory(userEmail);
+                        } else {
+                            System.out.println("Email cannot be empty. Please try again.");
+                        }
                         break;
 
                     case 0:
@@ -53,6 +69,8 @@ public class Main {
                 scanner.nextLine();
             }
         } while (status);
+
         scanner.close();
     }
+
 }

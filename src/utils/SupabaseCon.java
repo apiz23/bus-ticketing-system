@@ -19,15 +19,4 @@ public class SupabaseCon {
         }
         return connection;
     }
-
-    public static void closeConnection(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.close();
-                System.out.println("Disconnected from the database.");
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }

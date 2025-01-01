@@ -3,6 +3,10 @@ package bus;
 import utils.SupabaseCon;
 import utils.TerminalCommand;
 
+import javax.swing.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +52,60 @@ public class Bus {
         this.busCapacity = busCapacity;
     }
 
+    public void menu(){
+        Scanner scanner = new Scanner(System.in);
+        TerminalCommand cmd = new TerminalCommand();
+        boolean status = true;
+
+        do {
+            System.out.println("===== Bus Menu =====");
+            System.out.println("1. View Bus Model");
+            System.out.println("2. Add a New Bus Model");
+            System.out.println("3. Remove a Bus Model");
+            System.out.println("4. Generate report");
+            System.out.println("0. Exit");
+            System.out.print("\nEnter your choice: ");
+
+            if (!scanner.hasNextInt()) {
+                System.out.println("Invalid input. Please enter a valid number.");
+                scanner.nextLine();
+                continue;
+            }
+
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+            cmd.Clear();
+
+            switch (choice) {
+                case 1:
+                    viewBusModels();
+                    break;
+
+                case 2:
+                    addBusModel(scanner);
+                    break;
+
+                case 3:
+                    deleteBusModel(scanner);
+                    break;
+
+                case 4:
+                    generateReport();
+                    break;
+
+                case 0:
+                    System.out.println("Returning to Main Menu...");
+                    status = false;
+                    break;
+
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+                    break;
+            }
+            cmd.waitForEnter();
+            cmd.Clear();
+        } while (status);
+    }
 
     //Economy
     public void generateEconomyLayout(int capacity, String[] seats) {
@@ -224,7 +282,6 @@ public class Bus {
             e.printStackTrace();
             System.out.println("An error occurred while retrieving the bus models.");
         }
-        new TerminalCommand().waitForEnter();
     }
 
     public void addBusModel(Scanner scanner) {
@@ -233,15 +290,35 @@ public class Bus {
         scanner.nextLine();
         new TerminalCommand().customText("Add Bus Model");
 
-        System.out.println("Enter Bus Brand: ");
-        String busBrand = scanner.nextLine();
+        do {
+            System.out.print("Enter Bus Brand: ");
+            busBrand = scanner.nextLine().trim();
+            if (busBrand.isEmpty()) {
+                System.out.println("Bus brand cannot be empty. Please enter a valid bus brand.");
+            }
+        } while (busBrand.isEmpty());
 
-        System.out.println("Enter Capacity: ");
-        int capacity = scanner.nextInt();
-        scanner.nextLine();
+        do {
+            System.out.print("Enter Capacity: ");
+            while (!scanner.hasNextInt()) {
+                System.out.println("Invalid input. Please enter a valid number for capacity.");
+                scanner.next();
+            }
+            busCapacity = scanner.nextInt();
+            scanner.nextLine();
+            if (busCapacity <= 0) {
+                System.out.println("Capacity must be a positive number. Please enter a valid capacity.");
+            }
+        } while (busCapacity <= 0);
 
-        System.out.println("Enter Bus Type (e.g., Economy, Executive, Double Decker): ");
-        String busType = scanner.nextLine();
+        do {
+            System.out.print("Enter Bus Type (e.g., Economy, Executive, Double Decker): ");
+            busType = scanner.nextLine().trim();
+            if (busType.isEmpty()) {
+                System.out.println("Bus type cannot be empty. Please enter a valid bus type.");
+            }
+        } while (busType.isEmpty());
+
 
         try (Connection connection = SupabaseCon.connect()) {
             if (connection == null) {
@@ -249,11 +326,11 @@ public class Bus {
                 return;
             }
 
-            String insertQuery = "INSERT INTO bus_model (brand, busCapacity, type) VALUES (?, ?, ?);";
+            String insertQuery = "INSERT INTO bus_model (brand, capacity, type) VALUES (?, ?, ?);";
             PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
 
             preparedStatement.setString(1, busBrand);
-            preparedStatement.setInt(2, capacity);
+            preparedStatement.setInt(2, busCapacity);
             preparedStatement.setString(3, busType);
 
             int rowsAffected = preparedStatement.executeUpdate();
@@ -268,7 +345,6 @@ public class Bus {
             e.printStackTrace();
             System.out.println("An error occurred while adding the bus model.");
         }
-        new TerminalCommand().waitForEnter();
     }
 
     public void deleteBusModel(Scanner scanner) {
@@ -303,6 +379,75 @@ public class Bus {
             e.printStackTrace();
             System.out.println("An error occurred while deleting the bus model.");
         }
-        new TerminalCommand().waitForEnter();
+    }
+
+    public void generateReport() {
+        new TerminalCommand().Clear();
+
+        try (Connection connection = SupabaseCon.connect()) {
+            if (connection == null) {
+                System.out.println("Failed to connect to the database.");
+                return;
+            }
+
+            String selectQuery = "SELECT * FROM bus_model;";
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+
+            // File chooser to save the report
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Save Bus Models Report");
+            int userSelection = fileChooser.showSaveDialog(null);
+
+            if (userSelection != JFileChooser.APPROVE_OPTION) {
+                System.out.println("File selection cancelled.");
+                return;
+            }
+
+            File file = fileChooser.getSelectedFile();
+            if (!file.getName().endsWith(".txt")) {
+                file = new File(file.getAbsolutePath() + ".txt");
+            }
+
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write("Bus Models Report\n");
+                writer.write("=====================\n");
+
+                writer.write(String.format("%-15s %-25s %-15s %-10s%n", "Bus Number", "Bus Brand", "Bus Type", "Capacity"));
+                writer.write("-------------------------------------------------------------\n");
+
+                // Writing bus models to the file
+                while (resultSet.next()) {
+                    setBusId(resultSet.getString("bus_id"));
+                    setBusBrand(resultSet.getString("brand"));
+                    setBusType(resultSet.getString("type"));
+                    setBusCapacity(resultSet.getInt("capacity"));
+
+                    writer.write(String.format("%-15s %-25s %-15s %-10d%n", getBusId(), getBusBrand(), getBusType(), getBusCapacity()));
+                }
+
+                // Reporting bus count by brand
+                writer.write("\n===== Bus Count by Brand =====\n");
+
+                String countQuery = "SELECT brand, COUNT(*) AS bus_count FROM bus_model GROUP BY brand;";
+                Statement countStatement = connection.createStatement();
+                ResultSet countResultSet = countStatement.executeQuery(countQuery);
+
+                while (countResultSet.next()) {
+                    String brand = countResultSet.getString("brand");
+                    int busCount = countResultSet.getInt("bus_count");
+                    writer.write(String.format("Brand: %-25s | Number of Buses: %d%n", brand, busCount));
+                }
+
+                System.out.println("Bus models report saved successfully at: " + file.getAbsolutePath());
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("An error occurred while saving the bus models report.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("An error occurred while retrieving the bus models.");
+        }
     }
 }
