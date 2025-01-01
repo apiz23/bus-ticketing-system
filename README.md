@@ -1,25 +1,5 @@
 # Installation Guide
 
-## Pre-Requisites
-
-### Install Figlet-CLI
-1. Install Figlet CLI globally using npm:
-   ```bash
-   npm install -g figlet-cli
-   ```
-
-### Install Figlet on macOS using Homebrew
-1. Install Homebrew (if not already installed):
-   ```bash
-   ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-   ```
-2. Install Figlet:
-   ```bash
-   brew install figlet
-   ```
-
----
-
 ## Steps to Run
 
 1. Clone the repository:
@@ -36,5 +16,10 @@
      ```
    - On Powershell:
      ```bash
+     ./run.bat
+
+   - On Mac:
+     ```bash
+     chmod +x run.sh
      ./run.bat
      
