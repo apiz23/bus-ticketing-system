@@ -3,7 +3,7 @@ package user;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class User {
+public abstract class User {
 
     private String name, email, phoneNumber, address;
     private int age;
@@ -48,8 +48,8 @@ public class User {
         this.address = address;
     }
 
-    public User() {
-    }
+
+    public User() {}
 
     public User(String name, int age, String email, String phoneNumber, String address) {
         this.name = name;
@@ -59,9 +59,7 @@ public class User {
         this.address = address;
     }
 
-    public void viewList(){
-        System.out.println("View all the list student");
-    }
+    public abstract void viewList();
 
     public ArrayList<String> fillCredentials() {
         Scanner scanner = new Scanner(System.in);

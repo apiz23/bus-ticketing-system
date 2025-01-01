@@ -35,6 +35,56 @@ public class Route {
     public double getPrice() { return price; }
     public String getTime() { return time; }
 
+    public void menu(){
+        Scanner scanner = new Scanner(System.in);
+        TerminalCommand cmd = new TerminalCommand();
+        boolean status = true;
+
+        do {
+            System.out.println("===== Route Menu =====");
+            System.out.println("1. View Bus Routes");
+            System.out.println("2. Add a New Bus Route");
+            System.out.println("3. Remove a Bus Route");
+            System.out.println("0. Exit");
+            System.out.print("\nEnter your choice: ");
+
+            if (!scanner.hasNextInt()) {
+                System.out.println("Invalid input. Please enter a valid number.");
+                scanner.nextLine();
+                continue;
+            }
+
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+            cmd.Clear();
+
+            switch (choice) {
+                case 1:
+                    viewRoutes();
+                    break;
+
+                case 2:
+                    addRoute(scanner);
+                    break;
+
+                case 3:
+                    deleteRoute(scanner);
+                    break;
+
+                case 0:
+                    System.out.println("Returning to Main Menu...");
+                    status = false;
+                    break;
+
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+                    break;
+            }
+            cmd.waitForEnter();
+            cmd.Clear();
+        } while (status);
+    }
+
     public String[] searchRoutes(String startStation, String endStation, String date) {
         Bus bus = new Bus();
 
@@ -139,6 +189,101 @@ public class Route {
         return null;
     }
 
+    public String[] searchRoutes(String startStation, String startDate) {
+        Bus bus = new Bus();
+
+        try {
+            Connection connection = SupabaseCon.connect();
+            if (connection == null) {
+                System.out.println("Failed to connect to the database.");
+                return null;
+            }
+
+            String query = "SELECT br.route_id, br.from_station, br.to_station, br.date, br.time, br.price, " +
+                    "bm.brand, bm.type AS bus_model_type, bm.bus_id AS bus_model_id " +
+                    "FROM bus_route br " +
+                    "JOIN bus_model bm ON br.bus_model_id = bm.bus_id " +
+                    "WHERE LOWER(br.from_station) LIKE ?";
+
+            if (!startDate.isEmpty()) {
+                query += " AND TO_DATE(br.date, 'DD-MM-YYYY') = TO_DATE(?, 'DD-MM-YYYY')";
+            }
+
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, "%" + startStation.toLowerCase() + "%");
+
+            if (!startDate.isEmpty()) {
+                statement.setString(2, startDate);
+            }
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (!resultSet.next()) {
+                System.out.println("No routes found for the specified trip.");
+                new TerminalCommand().waitForEnter();
+                return null;
+            }
+
+            System.out.println("No\tFrom Station\t\tTo Station\t\t\tDate\t\tTime\t\tPrice\t\tBus Brand\t\tBus Model Type");
+            System.out.println("+----+----------------------+----------------------+-------------------+--------+---------------------+---------------------+------------------+--------------------+");
+
+            List<Integer> busModelIds = new ArrayList<>();
+            List<Integer> routeIds = new ArrayList<>();
+            List<Double> prices = new ArrayList<>();
+
+            int rowNumber = 1;
+            do {
+                String fromStation = resultSet.getString("from_station");
+                String toStation = resultSet.getString("to_station");
+                String routeDate = resultSet.getString("date");
+                String time = resultSet.getString("time");
+                double price = resultSet.getDouble("price");
+                String brandName = resultSet.getString("brand");
+                String busModelType = resultSet.getString("bus_model_type");
+                int busModelId = resultSet.getInt("bus_model_id");
+                int routeId = resultSet.getInt("route_id");
+
+                busModelIds.add(busModelId);
+                routeIds.add(routeId);
+                prices.add(price);
+
+                System.out.println(rowNumber + "\t" + fromStation + "\t" + toStation + "\t" + routeDate + "\t" + time +
+                        "\tRM" + price + "\t\t" + brandName + "\t" + busModelType);
+
+                rowNumber++;
+            } while (resultSet.next());
+
+            System.out.println("+----+----------------------+----------------------+-------------------+--------+---------------------+---------------------+------------------+--------------------+");
+
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Choose a route by entering the number (1-" + busModelIds.size() + "): ");
+            int choice = scanner.nextInt();
+
+            if (choice < 1 || choice > busModelIds.size()) {
+                System.out.println("Invalid choice. Please try again.");
+            } else {
+                int selectedBusModelId = busModelIds.get(choice - 1);
+                int selectedRouteId = routeIds.get(choice - 1);
+                double price = prices.get(choice - 1);
+
+                String[] chosenSeats = bus.chooseSeats(selectedBusModelId, selectedRouteId);
+                if (chosenSeats != null) {
+                    return new String[]{
+                            String.valueOf(selectedRouteId),
+                            String.valueOf(selectedBusModelId),
+                            String.valueOf(price),
+                            chosenSeats[0],
+                            chosenSeats[1],
+                    };
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("An error occurred while fetching the routes.");
+        }
+        return null;
+    }
+
     public void viewRoutes() {
         try (Connection connection = SupabaseCon.connect()) {
             if (connection == null) {
@@ -178,7 +323,6 @@ public class Route {
             e.printStackTrace();
             System.out.println("An error occurred while retrieving the bus routes.");
         }
-        new TerminalCommand().waitForEnter();
     }
 
     public void addRoute(Scanner scanner) {
@@ -212,7 +356,7 @@ public class Route {
             System.out.print("Enter the to station: ");
             String toStation = scanner.nextLine();
 
-            System.out.print("Enter the date (e.g., 2024-12-20): ");
+            System.out.print("Enter the date (e.g., 20-12-2025): ");
             String date = scanner.nextLine();
 
             System.out.print("Enter the price: ");
@@ -254,7 +398,6 @@ public class Route {
             e.printStackTrace();
             System.out.println("An error occurred while adding the bus route.");
         }
-        new TerminalCommand().waitForEnter();
     }
 
     public void deleteRoute(Scanner scanner) {
@@ -300,6 +443,5 @@ public class Route {
             e.printStackTrace();
             System.out.println("An error occurred while deleting the bus route.");
         }
-        new TerminalCommand().waitForEnter();
     }
 }

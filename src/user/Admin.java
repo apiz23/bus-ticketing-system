@@ -1,5 +1,8 @@
 package user;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,6 +15,8 @@ import bus.Bus;
 import route.Route;
 import utils.SupabaseCon;
 import utils.TerminalCommand;
+
+import javax.swing.*;
 
 public class Admin extends User {
 
@@ -45,27 +50,24 @@ public class Admin extends User {
         return createdAt;
     }
 
-    public void Menu() {
+    public void mainMenu() {
+
         if (Login()) {
             Scanner scanner = new Scanner(System.in);
+            Bus bus = new Bus();
+            Route route = new Route();
+            TerminalCommand cmd = new TerminalCommand();
             boolean status = true;
+
             do {
-                System.out.println("""
-                ===== Admin Menu =====
-                1. View Booking History
-                2. View Clients
-                3. View Admins
-                4. View Bus Routes
-                5. View Bus Models
-                6. Add Admin
-                7. Add Bus Route
-                8. Add Bus Model
-                9. Remove Admin
-                10. Remove Bus Route
-                11. Remove Bus Model
-                0. Main Menu
-                
-                Enter your choice:\s""");
+                System.out.println("===== Management Menu =====");
+                System.out.println("1. Booking");
+                System.out.println("2. Client");
+                System.out.println("3. Route");
+                System.out.println("4. Bus");
+                System.out.println("5. Admin");
+                System.out.println("0. Exit");
+                System.out.print("\nEnter your choice: ");
 
                 if (!scanner.hasNextInt()) {
                     System.out.println("Invalid input. Please enter a valid number.");
@@ -74,33 +76,42 @@ public class Admin extends User {
                 }
 
                 int choice = scanner.nextInt();
+                scanner.nextLine();
+                cmd.Clear();
 
-                Bus bus = new Bus();
-                Route route = new Route();
-
-                new TerminalCommand().Clear();
                 switch (choice) {
-                    case 1 -> new Booking().viewBookingHistory();
-                    case 2 -> new Client().viewList();
-                    case 3 -> viewList();
-                    case 4 -> route.viewRoutes();
-                    case 5 -> bus.viewBusModels();
-                    case 6 -> addAdmin();
-                    case 7 -> route.addRoute(scanner);
-                    case 8 -> bus.addBusModel(scanner);
-                    case 9 -> removeAdmin();
-                    case 10 -> route.deleteRoute(scanner);
-                    case 11 -> bus.deleteBusModel(scanner);
-                    case 0 -> {
-                        System.out.println("Exiting...");
+                    case 1:
+                        new Booking().menu();
+                        break;
+
+                    case 2:
+                        new Client().menu();
+                        break;
+
+                    case 3:
+                        route.menu();
+                        break;
+
+                    case 4:
+                        bus.menu();
+                        break;
+
+                    case 5:
+                        menu();
+                        break;
+
+                    case 0:
+                        System.out.println("Returning to Main Menu...");
                         status = false;
-                    }
-                    default -> System.out.println("Invalid choice. Please try again.");
+                        break;
+
+                    default:
+                        System.out.println("Invalid choice. Please try again.");
+                        cmd.waitForEnter();
                 }
-
-                new TerminalCommand().Clear();
-
+                cmd.Clear();
             } while (status);
+
 
         } else {
             System.out.println("Login failed. Please try again.");
@@ -108,7 +119,7 @@ public class Admin extends User {
         }
     }
 
-    private boolean Login() {
+    public boolean Login() {
         Scanner scanner = new Scanner(System.in);
         boolean isAuthenticated = false;
 
@@ -160,6 +171,65 @@ public class Admin extends User {
         }
     }
 
+    public void menu(){
+        Scanner scanner = new Scanner(System.in);
+        TerminalCommand cmd = new TerminalCommand();
+        boolean status = true;
+
+        do {
+            System.out.println("===== Admin Menu =====");
+            System.out.println("1. View Admin");
+            System.out.println("2. Add a New Admin");
+            System.out.println("3. Remove a Admin");
+            System.out.println("4. Generate Report");
+            System.out.println("0. Exit");
+            System.out.print("\nEnter your choice: ");
+
+            if (!scanner.hasNextInt()) {
+                System.out.println("Invalid input. Please enter a valid number.");
+                scanner.nextLine();
+                continue;
+            }
+
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+            cmd.Clear();
+
+            switch (choice) {
+                case 1:
+                    viewList();
+                    cmd.waitForEnter();
+                    break;
+
+                case 2:
+                    addAdmin();
+                    cmd.waitForEnter();
+                    break;
+
+                case 3:
+                    deleteAdmin();
+                    cmd.waitForEnter();
+                    break;
+
+                case 4:
+                    generateReport();
+                    cmd.waitForEnter();
+                    break;
+
+                case 0:
+                    System.out.println("Returning to Main Menu...");
+                    status = false;
+                    break;
+
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+                    cmd.waitForEnter();
+            }
+            cmd.Clear();
+        } while (status);
+    }
+
+    @Override
     public void viewList() {
         ArrayList<Admin> adminList = new ArrayList<>();
 
@@ -190,7 +260,6 @@ public class Admin extends User {
                 System.out.printf("%-20s %-30s %-20s %-30s\n", admin.getUsername(), admin.getEmail(), admin.getPassword(), admin.getCreatedAt());
             }
 
-            new TerminalCommand().waitForEnter();
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("An error occurred while fetching the admin list.");
@@ -201,14 +270,38 @@ public class Admin extends User {
         Scanner scanner = new Scanner(System.in);
 
         new TerminalCommand().customText("Add Admin");
-        System.out.print("Enter new admin username: ");
-        String username = scanner.nextLine();
 
-        System.out.print("Enter new admin email: ");
-        String email = scanner.nextLine();
+        while (true) {
+            System.out.print("Enter new admin username: ");
+            username = scanner.nextLine().trim();
+            if (username.isEmpty()) {
+                System.out.println("Username cannot be empty. Please try again.");
+            } else {
+                break;
+            }
+        }
 
-        System.out.print("Enter new admin password: ");
-        String password = scanner.nextLine();
+        while (true) {
+            System.out.print("Enter new admin email: ");
+            email = scanner.nextLine().trim();
+
+            if (!email.matches("^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,6}$")) {
+                System.out.println("Invalid email format. Please enter a valid email.");
+            } else {
+                break;
+            }
+        }
+
+
+        while (true) {
+            System.out.print("Enter new admin password: ");
+            password = scanner.nextLine();
+            if (password.length() < 6) {
+                System.out.println("Password must be at least 6 characters long. Please try again.");
+            } else {
+                break;
+            }
+        }
 
         try (Connection connection = SupabaseCon.connect()) {
             if (connection == null) {
@@ -228,15 +321,13 @@ public class Admin extends User {
             } else {
                 System.out.println("Failed to add the new admin. Please try again.");
             }
-
-            new TerminalCommand().waitForEnter();
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("An error occurred while adding the new admin.");
         }
     }
 
-    private void removeAdmin() {
+    private void deleteAdmin() {
         Scanner scanner = new Scanner(System.in);
 
         viewList();
@@ -253,19 +344,81 @@ public class Admin extends User {
             String query = "DELETE FROM public.bus_admin WHERE username = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, identifier);
-            statement.setString(2, identifier);
 
             int rowsDeleted = statement.executeUpdate();
             if (rowsDeleted > 0) {
                 System.out.println("Admin removed successfully!");
             } else {
-                System.out.println("No admin found with the provided username or email.");
+                System.out.println("No admin found with the provided username.");
             }
-
-            new TerminalCommand().waitForEnter();
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("An error occurred while removing the admin.");
+        }
+    }
+
+    public void generateReport() {
+        ArrayList<Admin> adminList = new ArrayList<>();
+
+        try (Connection connection = SupabaseCon.connect()) {
+            if (connection == null) {
+                System.out.println("Failed to connect to the database.");
+                return;
+            }
+
+            String query = "SELECT username, email, password, created_at FROM public.bus_admin";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+                String name = resultSet.getString("username");
+                String email = resultSet.getString("email");
+                String password = resultSet.getString("password");
+                String createdAt = resultSet.getString("created_at");
+
+                adminList.add(new Admin(name, email, password, createdAt));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("An error occurred while fetching the admin data.");
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save Report");
+        int userSelection = fileChooser.showSaveDialog(null);
+
+        if (userSelection != JFileChooser.APPROVE_OPTION) {
+            System.out.println("File selection cancelled.");
+            return;
+        }
+
+        File file = fileChooser.getSelectedFile();
+        if (!file.getName().endsWith(".txt")) {
+            file = new File(file.getAbsolutePath() + ".txt");
+        }
+
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write("Admin Report\n");
+            writer.write("============\n\n");
+
+            writer.write(String.format("%-20s %-30s %-20s %-30s\n", "Name", "Email", "Password", "Created At"));
+            writer.write("--------------------------------------------------------------------------------------------------------\n");
+
+            for (Admin admin : adminList) {
+                writer.write(String.format("%-20s %-30s %-20s %-30s\n",
+                        admin.getUsername(),
+                        admin.getEmail(),
+                        admin.getPassword(),
+                        admin.getCreatedAt()));
+            }
+
+            writer.write("\nTotal Number of Admins: " + adminList.size() + "\n");
+
+            System.out.println("Report saved successfully at: " + file.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("An error occurred while saving the report.");
         }
     }
 }
