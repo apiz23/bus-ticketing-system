@@ -53,6 +53,7 @@ public class Main {
                         } else {
                             System.out.println("Email cannot be empty. Please try again.");
                         }
+                        cmd.waitForEnter();
                         break;
 
                     case 0:
