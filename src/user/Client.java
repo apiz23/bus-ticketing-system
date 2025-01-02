@@ -57,7 +57,6 @@ public class Client extends User {
                     break;
 
                 case 0:
-                    System.out.println("Returning to Main Menu...");
                     status = false;
                     break;
 

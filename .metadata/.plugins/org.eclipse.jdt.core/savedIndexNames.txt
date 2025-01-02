@@ -1,0 +1,1 @@
+INDEX VERSION 1.134+C:\Users\SCSM11\Desktop\Developer\Bus-Ticketing-System\.metadata\.plugins\org.eclipse.jdt.core

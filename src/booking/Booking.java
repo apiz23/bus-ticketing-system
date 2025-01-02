@@ -26,18 +26,19 @@ public class Booking {
         TerminalCommand cmd = new TerminalCommand();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         dateFormat.setLenient(false);
+        Route busRoute = new Route();
 
         cmd.Clear();
         cmd.customText("Welcome To BBS");
 
-        System.out.println("\n\nEnter From Where:");
+        System.out.println("\nEnter From Where:");
         String startStation = scanner.nextLine().toLowerCase();
 
-        System.out.println("Enter To Where (Optional):");
+        System.out.println("Enter To Where:");
         String endStation = scanner.nextLine().toLowerCase();
 
         String startDate = null;
-        String endDate = null;
+        String endDate;
 
         while (startDate == null) {
             System.out.println("Enter Start Date (DD-MM-YYYY):");
@@ -50,11 +51,12 @@ public class Booking {
             }
         }
 
-        while (endDate == null || (endDate.isEmpty() || isValidDate(endDate, dateFormat))) {
+        while (true) {
             System.out.println("Enter Return Date (DD-MM-YYYY) or leave empty for no return date:");
             String inputEndDate = scanner.nextLine();
 
             if (inputEndDate.isEmpty()) {
+                endDate = null;
                 break;
             } else if (isValidDate(inputEndDate, dateFormat) && isEndDateAfterStartDate(inputEndDate, startDate, dateFormat)) {
                 endDate = inputEndDate;
@@ -64,22 +66,18 @@ public class Booking {
             }
         }
 
-
-        Route busRoute = new Route();
-
-        if (!endDate.isEmpty()) {
-            String[] result1 =  busRoute.searchRoutes(startStation, endStation, startDate);
-            System.out.println("\nChoose your return trip bus:");
+        if (endDate != null) {
+            String[] result1 = busRoute.searchRoutes(startStation, endStation, startDate);
 
             if (result1 != null) {
-                String[] result2 =  busRoute.searchRoutes(endStation, startStation, endDate);
+                System.out.println("\nChoose your return trip bus:");
+                String[] result2 = busRoute.searchRoutes(endStation, startStation, endDate);
 
                 if (result2 != null) {
-
                     double totalPrice = Double.parseDouble(result1[2]) + Double.parseDouble(result2[2]);
                     ArrayList<String> clientDetails = new Client().fillCredentials();
 
-                    do {
+                    while (true) {
                         System.out.print("Enter payment amount (Route Price: RM " + totalPrice + "): RM ");
                         double paymentAmount = scanner.nextDouble();
 
@@ -94,50 +92,26 @@ public class Booking {
                         } else {
                             System.out.println("Payment failed. Incorrect payment amount.");
                         }
-                    } while (true);
+                    }
                 } else {
                     System.out.println("No return trip route found or an error occurred.");
                 }
             } else {
                 System.out.println("No outbound route found or an error occurred.");
             }
-        } else if (endStation.isEmpty() && endDate.isEmpty()){
-            String[] result =  busRoute.searchRoutes(startStation, startDate);
-
-            if (result != null) {
-                ArrayList<String> clientDetails = new Client().fillCredentials();
-
-                do {
-                    System.out.print("Enter payment amount (Route Price: RM " + result[2] + "): RM ");
-                    double paymentAmount = scanner.nextDouble();
-
-                    if (paymentAmount == Double.parseDouble(result[2])) {
-                        System.out.println("Payment successful. Booking your seat...");
-                        createBooking(Integer.parseInt(result[1]), Integer.parseInt(result[0]), Integer.parseInt(result[3]),result[4], clientDetails);
-                        System.out.println("Seat has been booked successfully.");
-                        System.out.println("Check your email for the receipt. Thank you!");
-                        new TerminalCommand().waitForEnter();
-                        break;
-                    } else {
-                        System.out.println("Payment failed. Incorrect payment amount.");
-                    }
-                } while (true);
-            } else {
-                System.out.println("No route found or an error occurred.");
-            }
         } else {
-            String[] result =  busRoute.searchRoutes(startStation, endStation, startDate);
+            String[] result = busRoute.searchRoutes(startStation, endStation, startDate);
 
             if (result != null) {
                 ArrayList<String> clientDetails = new Client().fillCredentials();
 
-                do {
+                while (true) {
                     System.out.print("Enter payment amount (Route Price: RM " + result[2] + "): RM ");
                     double paymentAmount = scanner.nextDouble();
 
                     if (paymentAmount == Double.parseDouble(result[2])) {
                         System.out.println("Payment successful. Booking your seat...");
-                        createBooking(Integer.parseInt(result[1]), Integer.parseInt(result[0]), Integer.parseInt(result[3]),result[4], clientDetails);
+                        createBooking(Integer.parseInt(result[1]), Integer.parseInt(result[0]), Integer.parseInt(result[3]), result[4], clientDetails);
                         System.out.println("Seat has been booked successfully.");
                         System.out.println("Check your email for the receipt. Thank you!");
                         new TerminalCommand().waitForEnter();
@@ -145,7 +119,7 @@ public class Booking {
                     } else {
                         System.out.println("Payment failed. Incorrect payment amount.");
                     }
-                } while (true);
+                }
             } else {
                 System.out.println("No route found or an error occurred.");
             }
@@ -198,7 +172,6 @@ public class Booking {
                     break;
 
                 case 0:
-                    System.out.println("Returning to Main Menu...");
                     status = false;
                     break;
 

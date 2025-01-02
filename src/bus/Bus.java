@@ -94,7 +94,6 @@ public class Bus {
                     break;
 
                 case 0:
-                    System.out.println("Returning to Main Menu...");
                     status = false;
                     break;
 

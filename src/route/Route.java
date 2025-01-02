@@ -45,6 +45,7 @@ public class Route {
             System.out.println("1. View Bus Routes");
             System.out.println("2. Add a New Bus Route");
             System.out.println("3. Remove a Bus Route");
+            System.out.println("4. Search Station Routes");
             System.out.println("0. Exit");
             System.out.print("\nEnter your choice: ");
 
@@ -71,8 +72,12 @@ public class Route {
                     deleteRoute(scanner);
                     break;
 
+                case 4:
+                    System.out.println("\nEnter a Station:");
+                    searchRoutes(scanner.nextLine().toLowerCase());
+                    break;
+
                 case 0:
-                    System.out.println("Returning to Main Menu...");
                     status = false;
                     break;
 
@@ -189,9 +194,7 @@ public class Route {
         return null;
     }
 
-    public String[] searchRoutes(String startStation, String startDate) {
-        Bus bus = new Bus();
-
+    public String[] searchRoutes(String station) {
         try {
             Connection connection = SupabaseCon.connect();
             if (connection == null) {
@@ -203,22 +206,14 @@ public class Route {
                     "bm.brand, bm.type AS bus_model_type, bm.bus_id AS bus_model_id " +
                     "FROM bus_route br " +
                     "JOIN bus_model bm ON br.bus_model_id = bm.bus_id " +
-                    "WHERE LOWER(br.from_station) LIKE ?";
-
-            if (!startDate.isEmpty()) {
-                query += " AND TO_DATE(br.date, 'DD-MM-YYYY') = TO_DATE(?, 'DD-MM-YYYY')";
-            }
+                    "WHERE br.from_station ILIKE ?";
 
             PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1, "%" + startStation.toLowerCase() + "%");
-
-            if (!startDate.isEmpty()) {
-                statement.setString(2, startDate);
-            }
+            statement.setString(1, "%" + station.toLowerCase() + "%");
 
             ResultSet resultSet = statement.executeQuery();
 
-            if (!resultSet.next()) {
+            if (!resultSet.isBeforeFirst()) {
                 System.out.println("No routes found for the specified trip.");
                 new TerminalCommand().waitForEnter();
                 return null;
@@ -232,7 +227,7 @@ public class Route {
             List<Double> prices = new ArrayList<>();
 
             int rowNumber = 1;
-            do {
+            while (resultSet.next()) {
                 String fromStation = resultSet.getString("from_station");
                 String toStation = resultSet.getString("to_station");
                 String routeDate = resultSet.getString("date");
@@ -251,32 +246,8 @@ public class Route {
                         "\tRM" + price + "\t\t" + brandName + "\t" + busModelType);
 
                 rowNumber++;
-            } while (resultSet.next());
-
-            System.out.println("+----+----------------------+----------------------+-------------------+--------+---------------------+---------------------+------------------+--------------------+");
-
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Choose a route by entering the number (1-" + busModelIds.size() + "): ");
-            int choice = scanner.nextInt();
-
-            if (choice < 1 || choice > busModelIds.size()) {
-                System.out.println("Invalid choice. Please try again.");
-            } else {
-                int selectedBusModelId = busModelIds.get(choice - 1);
-                int selectedRouteId = routeIds.get(choice - 1);
-                double price = prices.get(choice - 1);
-
-                String[] chosenSeats = bus.chooseSeats(selectedBusModelId, selectedRouteId);
-                if (chosenSeats != null) {
-                    return new String[]{
-                            String.valueOf(selectedRouteId),
-                            String.valueOf(selectedBusModelId),
-                            String.valueOf(price),
-                            chosenSeats[0],
-                            chosenSeats[1],
-                    };
-                }
             }
+            System.out.println("+----+----------------------+----------------------+-------------------+--------+---------------------+---------------------+------------------+--------------------+");
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("An error occurred while fetching the routes.");
